@@ -1455,8 +1455,11 @@ pub fn Stream(comptime Handler: type) type {
                     } else log.warn("unimplemented OSC callback: {}", .{cmd});
                 },
 
-                .progress => {
-                    log.warn("unimplemented OSC callback: {}", .{cmd});
+                .progress => |v| {
+                    if (@hasDecl(T, "setProgress")) {
+                        try self.handler.setProgress(v.state, v.progress);
+                        return;
+                    } else log.warn("unimplemented OSC callback: {}", .{cmd});
                 },
             }
 

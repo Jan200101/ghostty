@@ -155,6 +155,8 @@ pub const Action = union(Key) {
     /// The current working directory has changed for the target terminal.
     pwd: Pwd,
 
+    progress: Progress,
+
     /// Set the mouse cursor shape.
     mouse_shape: terminal.MouseShape,
 
@@ -243,6 +245,7 @@ pub const Action = union(Key) {
         desktop_notification,
         set_title,
         pwd,
+        progress,
         mouse_shape,
         mouse_visibility,
         mouse_over_link,
@@ -460,6 +463,11 @@ pub const Pwd = struct {
             .pwd = self.pwd.ptr,
         };
     }
+};
+
+pub const Progress = struct {
+    state: terminal.osc.Command.ProgressState,
+    progress: ?u8 = null,
 };
 
 /// The desktop notification to show.

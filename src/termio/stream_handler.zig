@@ -716,6 +716,14 @@ pub const StreamHandler = struct {
         self.terminal.screen.endHyperlink();
     }
 
+    pub fn setProgress(
+        self: *StreamHandler,
+        state: terminal.osc.Command.ProgressState,
+        progress: ?u8,
+    ) !void {
+        self.surfaceMessageWriter(.{ .progress = .{ .state = state, .progress = progress } });
+    }
+
     pub fn deviceAttributes(
         self: *StreamHandler,
         req: terminal.DeviceAttributeReq,

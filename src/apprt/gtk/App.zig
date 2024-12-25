@@ -470,6 +470,7 @@ pub fn performAction(
         .desktop_notification => self.showDesktopNotification(target, value),
         .set_title => try self.setTitle(target, value),
         .pwd => try self.setPwd(target, value),
+        .progress => self.setProgress(target, value),
         .present_terminal => self.presentTerminal(target),
         .initial_size => try self.setInitialSize(target, value),
         .mouse_visibility => self.setMouseVisibility(target, value),
@@ -818,6 +819,62 @@ fn showDesktopNotification(
     // We set the notification ID to the body content. If the content is the
     // same, this notification may replace a previous notification
     c.g_application_send_notification(g_app, n.body.ptr, notification);
+}
+
+fn setProgress(
+    self: *App,
+    target: apprt.Target,
+    n: apprt.action.Progress,
+) void {
+    switch (target) {
+        .app => {},
+        .surface => {
+            // the only supported states right now
+            if (n.state != .set and n.state != .pause and n.state != .remove)
+                return;
+
+            const dbus_connection = c.g_application_get_dbus_connection(@ptrCast(self.app));
+            var err: ?*c.GError = null;
+            defer if (err) |e| c.g_error_free(e);
+
+            var builder: c.GVariantBuilder = undefined;
+            c.g_variant_builder_init(&builder, c.G_VARIANT_TYPE("(sa(sv))"));
+            c.g_variant_builder_add(&builder, "s", "application://com.mitchellh.ghostty.desktop");
+            {
+                c.g_variant_builder_open(&builder, c.G_VARIANT_TYPE("a(sv)"));
+                defer c.g_variant_builder_close(&builder);
+
+                if (n.state == .set or n.state == .pause) {
+                    c.g_variant_builder_add(
+                        &builder,
+                        "(sv)",
+                        "progress",
+                        c.g_variant_new_double(@as(f64, @floatFromInt(n.progress.?)) / 100),
+                    );
+                }
+
+                c.g_variant_builder_add(
+                    &builder,
+                    "(sv)",
+                    "progress-visible",
+                    c.g_variant_new_boolean(@intFromBool(n.state != .remove)),
+                );
+            }
+
+            if (0 == c.g_dbus_connection_emit_signal(
+                dbus_connection,
+                null,
+                "/com/canonical/UnityLauncher",
+                "com.canonical.Unity.LauncherEntry",
+                "Update",
+                c.g_variant_builder_end(&builder),
+                &err,
+            )) {
+                if (err) |e| log.err("unable to set progress: {s}", .{e.message});
+                return;
+            }
+        },
+    }
 }
 
 fn configChange(

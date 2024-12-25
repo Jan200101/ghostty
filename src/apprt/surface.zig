@@ -81,6 +81,12 @@ pub const Message = union(enum) {
     /// The terminal has reported a change in the working directory.
     pwd_change: WriteReq,
 
+    /// Set progress state
+    progress: struct {
+        state: terminal.osc.Command.ProgressState,
+        progress: ?u8 = null,
+    },
+
     pub const ReportTitleStyle = enum {
         csi_21_t,
 

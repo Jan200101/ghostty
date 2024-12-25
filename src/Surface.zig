@@ -933,6 +933,17 @@ pub fn handleMessage(self: *Surface, msg: Message) !void {
         .present_surface => try self.presentSurface(),
 
         .password_input => |v| try self.passwordInput(v),
+
+        .progress => |progress| {
+            try self.rt_app.performAction(
+                .{ .surface = self },
+                .progress,
+                .{
+                    .state = progress.state,
+                    .progress = progress.progress,
+                },
+            );
+        },
     }
 }
 
